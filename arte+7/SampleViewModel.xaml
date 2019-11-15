@@ -1,0 +1,9 @@
+﻿<vm:ViewModel
+    xmlns:vm="clr-namespace:arte_7">
+    
+    <vm:ViewModel.Videos>
+        <vm:Video Title="Title 1" DisplayedAt="123" Duration="123"/>
+        <vm:Video Title="Title 2" DisplayedAt="654" Duration="654"/>
+    </vm:ViewModel.Videos>
+    
+</vm:ViewModel>

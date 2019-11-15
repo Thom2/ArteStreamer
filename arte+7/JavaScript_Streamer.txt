@@ -1,0 +1,183 @@
+﻿    <script type="text/javascript">
+
+	function getHTMLDomElem(text,htmlTag, attrib){
+	    return $(text).find(htmlTag).attr(attrib);
+	}
+
+//var proxy = 'http://australlianproxy.appspot.com/'
+var proxy = '/arte/xd.php?json=true&url=http://www.'
+
+    	var step1 = 'http://www.arte.tv/guide/fr/051115-000/les-amours-imaginaires?autoplay=1';
+    	$('#process').html("Starting...");
+
+    	//getHttpCrossDomain(step1).done(function ( data ) {
+    	$.get('/arte/xd.php?url=' + step1).done(function ( data ) {
+	    var step2 = null;
+	var titre = null;
+	var lang1 = null;
+	var duration_seconds = null;
+	var size = null;
+	var program_image = null;
+	var itemsMP4 = [];
+	var itemsRTMP = [];
+	var loop = 0;
+	var loopMP4alt = 0;
+
+	    if ( step2 = getHTMLDomElem(data, '.video-container', 'arte_vp_url') ) {
+	    	$('#process').html("25%");
+
+	// Get rid of http:// as $proxy doesn't like it
+	step2 = step2.replace("http://", "");
+
+    	    	$.getJSON(proxy + step2, function() {
+	})
+		.done(function(data2) {
+			// LANG1
+		    	lang1 = data2.videoJsonPlayer.videoIsoLang;
+			program_image = data2.videoJsonPlayer.VTU.IUR;
+
+			// sometimes VSU isn't filled
+			// anyway, it's only provided for the main language (aka lang1)
+			var vsu = data2.videoJsonPlayer.VSU;
+		    	titre = data2.videoJsonPlayer.VTI;
+			if (vsu != undefined) {
+		    	    titre += " - " + vsu;
+			}
+			var quality;
+			var quality_detail;
+     	     	     	var url;
+     	     	     	var width;
+     	     	     	var height;
+     	     	     	var mediaType;
+     	     	     	var bitrate;
+
+		    	for ( var key in data2.videoJsonPlayer.VSR ) {
+
+			// MP4
+			    if ( data2.videoJsonPlayer.VSR[key].url != undefined) {
+			    	if ( data2.videoJsonPlayer.VSR[key].streamer == undefined) {
+
+			            quality = data2.videoJsonPlayer.VSR[key].quality;
+			            width = data2.videoJsonPlayer.VSR[key].width;
+			            height = data2.videoJsonPlayer.VSR[key].height;
+			            mediaType = data2.videoJsonPlayer.VSR[key].mediaType;
+			            bitrate = data2.videoJsonPlayer.VSR[key].bitrate;
+			            versionCode = data2.videoJsonPlayer.VSR[key].versionCode;
+
+		    	            loopMP4alt++;
+			            url = data2.videoJsonPlayer.VSR[key].url;
+			    	    itemsMP4.push("<li><code>" +
+			      	    	"<a href='"+url+"'>Low quality MP4 link #"+loopMP4alt+"</a> &mdash; " +
+			            	" MP4 " +
+			            	" / "+versionCode+
+			            	" / "+quality+" ("+width+"x"+height+")"+
+			            	" / "+bitrate+"bps</code></li>");
+			        }
+			    }
+
+			    // RTMP
+			    if ( data2.videoJsonPlayer.VSR[key].streamer != undefined ) {
+			        quality = data2.videoJsonPlayer.VSR[key].quality;
+			        width = data2.videoJsonPlayer.VSR[key].width;
+			        height = data2.videoJsonPlayer.VSR[key].height;
+			        mediaType = data2.videoJsonPlayer.VSR[key].mediaType;
+			        bitrate = data2.videoJsonPlayer.VSR[key].bitrate;
+			        versionCode = data2.videoJsonPlayer.VSR[key].versionCode;
+
+		    	        loop++;
+			        url = data2.videoJsonPlayer.VSR[key].streamer + data2.videoJsonPlayer.VSR[key].url;
+			    	itemsRTMP.push("<li><code>" +
+			      	    "<a href='"+url+"'>Streaming link #"+loop+"</a> &mdash; " +
+			            mediaType+
+			            " / "+versionCode+
+			            " / "+quality+" ("+width+"x"+height+")"+
+			            " / "+bitrate+"bps</code></li>");
+			    }
+			}
+
+	    	    	$('#process').html("50%");
+
+	    	    })
+		.fail(function() {
+	    	    	$('#process').html("<div id='error_head'>&#x2716; Oops ! Something went wrong.</div> <p id='error'>I got a strange answer from Arte... Maybe they have blacklisted me again, or you are using an antivirus that denies some of the operations required (TrendMicro?)</p>");
+		});
+
+	// Without /player/ , get access to the MP4 links
+	// Thanks Christian (http://floriancrouzat.net/2010/12/arte7-videos-shell-script-to-uncover-rtmp-urls/#comment-20921)
+	step2 = step2.replace(/\/player\//, "/");
+
+	// Get rid of http:// as $proxy doesn't like it
+	step2 = step2.replace("http://", "");
+
+    	    	$.getJSON(proxy + step2, function( data2 ) {
+
+		duration_seconds = data2.video.videoDurationSeconds;
+
+	    	    $('#process').html("75%");
+
+		loop = 0;
+
+		    for ( var key in data2.video.VSR ) {
+		// Get rid of .ts or ftp stored files, or rtmp streams...
+			if ( data2.video.VSR[key].VUR.match("^http://[^ ]*.mp4$") ) {
+			    loop++;
+			// Build a list of found MP4 to append to HTML later
+			var quality="Unknown";
+			if ( data2.video.VSR[key].VUR.match("MP4-800_AMM-HBBTV") ) {
+			quality="Standard quality: &#10142; quality, &#10142; storage";
+			// 800 kbps + audio = 880 kbps = 380 MBph
+			quality_detail="Estimated required storage: ~" + Math.round(380*(Math.round(duration_seconds/60))/60)
+			bitrate="800";
+			width="720";
+			height="406"
+			} else if ( data2.video.VSR[key].VUR.match("MP4-1500_AMM-HBBTV") ) {
+			quality="DVD equivalent:  &#10138; quality, &#10142; storage";
+			// 1500 kbps + audio = 1680 kbps = 720 MBph
+			quality_detail="Estimated required storage: ~" + Math.round(720*(Math.round(duration_seconds/60))/60)
+			bitrate="1500";
+			width="720";
+			height="406"
+			} else if ( data2.video.VSR[key].VUR.match("MP4-1500_AMM-Reach") ) {
+			quality="Recommanded for smartphones: &#10136; quality, &#10136; storage" ;
+			// 300 kbps + audio = 385 kbps = 165 MBph
+			quality_detail="Estimated required storage: ~" + Math.round(165*(Math.round(duration_seconds/60))/60)
+			bitrate="1500";
+			width="480";
+			height="272"
+			} else if ( data2.video.VSR[key].VUR.match("MP4-2200_AMM-HBBTV") ) {
+			quality="Bluray equivalent: &#10138; quality, &#10138; storage";
+			// 2200 kbps + audio = 2580 kbps = 1100 MBph
+			quality_detail="Estimated required storage: ~" + Math.round(1100*(Math.round(duration_seconds/60))/60)
+			bitrate="2200";
+			width="1280";
+			height="720"
+			}
+			versionCode = data2.video.VSR[key].version;
+			    itemsMP4.unshift("<li><code><strong>" +
+			"<a href='"+data2.video.VSR[key].VUR+"'>Direct link #"+loop+"</a></strong> (MP4 "+versionCode+")" +
+			"<ul>" +
+				"<li><strong>"+quality+"</strong></li>" +
+				"<li>"+quality_detail+" MB</li>" +
+ 				    "<li>Resolution: "+width+" x "+height+" px." +
+ 				"<li>Bitrate: "+bitrate+" bps</li>" +
+			"</ul>" +
+			"</code></li><br/>");
+			}
+		    }
+
+		    $('#link').html("<h1>" + titre + "</h1>"
+			+ "<br/><img width='300px' src='"+program_image+"' alt='Program Image' /><br/><br/>"
+		+ "<h2>MP4 file(s)</h2><ul>"
+			+ itemsMP4.join('') + "</ul>"
+		+ "<br/><h2>RTMP stream(s)</h2><ul>"
+			+ itemsRTMP.join('') + "</ul>");
+		    $('#process').html("&#x2713; 100%");
+	});
+// ###########################################################################
+
+	    } else {
+	    	$('#process').html("<div id='error_head'>&#x2716; Oops ! Something went wrong.</div> <p id='error'> Maybe your link has expired ?<br/>Sadly for you, <a href='mailto:contact@floriancrouzat.net'>I'm</a> probably out so ... Good luck anyway. </p>");
+	    }
+    	});
+
+    	</script>
