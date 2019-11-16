@@ -137,7 +137,7 @@ namespace arte_7
         {
             int i = 0;
 
-            HtmlNodeCollection nodes = document.DocumentNode.SelectNodes("//div[@class='video']");
+            HtmlNodeCollection nodes = document.DocumentNode.SelectNodes("//div[@class='teasers-list__teaser']");
             foreach (HtmlNode node in nodes)
             {
                 if (Constants.IS_LOCAL && i++ == 50) return; // Process only first 5 videos
@@ -157,7 +157,7 @@ namespace arte_7
             {
                 return VideoDecoder.Decode(videoNode);
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 return null;
             }
