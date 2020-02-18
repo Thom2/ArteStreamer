@@ -6,6 +6,7 @@ using HtmlAgilityPack;
 using System.Diagnostics;
 using System.ComponentModel;
 using System.Web;
+using System.Linq;
 
 namespace arte_7
 {
@@ -17,7 +18,8 @@ namespace arte_7
             videoList.Clear();
 
             // Load first video page (page 1) asynchronously
-            LoadVideoPageAsync(videoList, 1, finishedAction);
+            //LoadVideoPageAsync(videoList, 1, finishedAction);
+            LoadVideoPages_Iron();
         }
 
         public static void LoadVideoList(VideoList videoList, int pageId, Action<Exception> finishedAction)
@@ -41,6 +43,31 @@ namespace arte_7
                 LoadVideoPageAsync(videoList, ++videoList.LoadedVideoPages, finishedAction);
             }
         }
+
+        private static void LoadVideoPages_Iron()
+        {
+            ArteVideoScraper scrape = new ArteVideoScraper();
+            scrape.Start();
+        }
+
+        //private static void LoadVideoPages_Scrapy()
+        //{
+        //    ScrapingBrowser browser = new ScrapingBrowser();
+
+        //    //set UseDefaultCookiesParser as false if a website returns invalid cookies format
+        //    //browser.UseDefaultCookiesParser = false;
+
+        //    WebPage homePage = browser.NavigateToPage(new Uri("https://www.extreme-design.eu", UriKind.Absolute));
+
+        //    ScrapySharp.Html.Forms.PageWebForm form = homePage.FindFormById("sb_form");
+        //    form["q"] = "scrapysharp";
+        //    form.Method = HttpVerb.Get;
+        //    WebPage resultsPage = form.Submit();
+
+        //    HtmlNode[] resultsLinks = resultsPage.Html.CssSelect("div.sb_tlst h3 a").ToArray();
+
+        //    WebPage blogPage = resultsPage.FindLinks(By.Text("romcyber blog | Just another WordPress site")).Single().Click();
+        //}
 
         private static void LoadVideoPageAsync(VideoList videoList, int pageId, Action<Exception> finishedAction)
         {
